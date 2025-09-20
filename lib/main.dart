@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart'; // Add this
-import 'package:firebase_auth/firebase_auth.dart'; // Add this
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'utils/theme.dart';
-import 'app.dart';
 import 'providers/mood_provider.dart';
 import 'models/journal_entry.dart';
+import 'models/gratitude.dart';
 import 'package:flutter/services.dart';
-import 'screens/emotion_tracker.dart';
 import 'screens/home_screen.dart';
-import 'screens/journal_entries.dart';
-import 'screens/journal_screen.dart';
-import 'firebase_options.dart'; // Add this
-import 'screens/auth_page.dart'; // Add this
+import 'firebase_options.dart';
+import 'screens/auth_page.dart';
+import 'services/journal_storage.dart';
+import 'services/gratitude_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,14 +24,17 @@ void main() async {
 
   await dotenv.load(fileName: ".env");
 
-  // Initialize Firebase first
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize Hive and all its adapters and boxes first
   await Hive.initFlutter();
   Hive.registerAdapter(JournalEntryAdapter());
-  await Hive.openBox<JournalEntry>('journalEntries');
+  Hive.registerAdapter(GratitudeAdapter());
+  await JournalStorage.init();
+  await GratitudeStorage.init();
 
   runApp(
     ChangeNotifierProvider(
@@ -42,7 +44,6 @@ void main() async {
   );
 }
 
-// A new widget to handle the authentication state
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -52,25 +53,20 @@ class AuthWrapper extends StatelessWidget {
       title: 'Renbo',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      // Use a StreamBuilder to listen for auth state changes
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.active) {
-            User? user = snapshot.data;
-            if (user == null) {
-              // User is not signed in, show the AuthPage
-              return const AuthPage();
-            }
-            // User is signed in, show the HomeScreen
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          if (snapshot.hasData) {
             return const HomeScreen();
           }
-          // Show a loading indicator while checking the auth state
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
+          return const AuthPage();
         },
       ),
     );

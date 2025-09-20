@@ -85,9 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'renbo-genai.firebasestorage.app',
     measurementId: 'G-DWR0YHN8TX',
   );
-<<<<<<< HEAD
 }
-=======
-
-}
->>>>>>> repo2/main

@@ -41,7 +41,6 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-<<<<<<< HEAD
         <!-- Add this intent to allow dialing -->
         <intent>
             <action android:name="android.intent.action.DIAL" />
@@ -49,7 +48,3 @@
         </intent>
     </queries>
 </manifest>
-=======
-    </queries>
-</manifest>
->>>>>>> repo2/main

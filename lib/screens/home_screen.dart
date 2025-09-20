@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:renbo/api/gemini_service.dart'; // Make sure to import your service
+import 'package:provider/provider.dart';
 import 'package:renbo/utils/theme.dart';
 import 'package:renbo/utils/constants.dart';
 import 'package:renbo/screens/chat_screen.dart';
 import 'package:renbo/screens/meditation_screen.dart';
+import 'package:renbo/screens/sessions_screen.dart';
 import 'package:renbo/screens/emotion_tracker.dart';
 import 'package:renbo/screens/hotlines_screen.dart';
-import 'package:renbo/screens/gratitude_bubbles_screen.dart'; // Import the new screen
 import 'package:renbo/widgets/mood_card.dart';
 import 'package:renbo/screens/stress_tap_game.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:renbo/screens/settings_page.dart'; // This is the new import
+import 'package:renbo/screens/gratitude_bubbles_screen.dart'; // Import the gratitude screen
+import 'package:renbo/api/gemini_service.dart'; // Import GeminiService
 
-// 1. CONVERTED TO A STATEFUL WIDGET
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -19,36 +22,41 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // 2. STATE VARIABLES TO HOLD THE THOUGHT AND LOADING STATE
+  String _userName = "User";
+  String _thoughtOfTheDay = "Loading a new thought...";
   final GeminiService _geminiService = GeminiService();
-  String _thoughtOfTheDay = "Loading a fresh thought for you...";
-  bool _isLoadingThought = true;
 
-  // 3. FETCH THE THOUGHT WHEN THE SCREEN IS FIRST BUILT
   @override
   void initState() {
     super.initState();
-    _fetchThought();
+    _fetchThoughtOfTheDay();
+    // Listen to Firebase Auth state changes
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        setState(() {
+          // If the user's display name is set, use it. Otherwise, keep the default.
+          _userName = user.displayName ?? "User";
+        });
+      }
+    });
   }
 
-  void _fetchThought() async {
+  void _fetchThoughtOfTheDay() async {
     try {
       final thought = await _geminiService.generateThoughtOfTheDay();
       if (mounted) {
-        // Check if the widget is still in the tree
         setState(() {
           _thoughtOfTheDay = thought;
-          _isLoadingThought = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _thoughtOfTheDay =
-              "Kindness is a gift everyone can afford to give."; // Fallback
-          _isLoadingThought = false;
+              "The best way to predict the future is to create it.";
         });
       }
+      print('Error fetching thought of the day: $e');
     }
   }
 
@@ -64,7 +72,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // This is the updated navigation logic
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsPage()),
+              );
+            },
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -73,17 +89,16 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Good Afternoon, ${AppConstants.initialUsername}!',
-                style: TextStyle(
+              // Use the dynamic user name and the new greeting
+              Text(
+                'Hello, $_userName!',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.darkGray,
                 ),
               ),
               const SizedBox(height: 16),
-              // 4. UPDATED MOODCARD TO USE THE STATE VARIABLE
-              // Note: We remove 'const' because the content is now dynamic
               MoodCard(
                 title: 'Thought of the day',
                 content: _thoughtOfTheDay,
@@ -161,8 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 16),
             _buildButton(
               context,
-              icon: Icons.favorite_border,
-              label: 'Gratitudes',
+              icon: Icons.bubble_chart, // Icon for gratitude page
+              label: 'Gratitude',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
