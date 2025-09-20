@@ -17,7 +17,7 @@ class GeminiClassifiedResponse {
 // *** FIX: THERE IS ONLY ONE GeminiService CLASS DEFINITION NOW ***
 class GeminiService {
   final String _apiKey = AppConstants.geminiApiKey;
-  
+
   // For the manual HTTP request
   final String _modelUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=';
@@ -36,7 +36,7 @@ class GeminiService {
   /// Your existing method for chat classification - no changes needed here.
   Future<GeminiClassifiedResponse> generateAndClassify(String prompt) async {
     final headers = {'Content-Type': 'application/json'};
-    
+
     final systemPrompt = """
 You are Renbot, a supportive and non-judgmental AI assistant. Your role is to provide a safe space for users to express their thoughts and feelings. First, create an empathetic and supportive response to the user's message. Second, classify the user's message for self-harm or suicidal ideation.
 ** always be empathetic and supportive in your response. **
@@ -111,7 +111,7 @@ User's message: "$prompt"
     try {
       const prompt =
           'Generate a short, positive, and insightful thought of the day for a mental wellness app. Make it concise and uplifting, like a fortune cookie message.';
-      
+
       final response = await _model.generateContent([Content.text(prompt)]);
 
       if (response.text != null) {
